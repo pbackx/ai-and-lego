@@ -52,3 +52,36 @@ Or using the name that you gave the hub during the firmware installation:
 
     ```powershell
     pybricksdev run ble -n "Technic Hub" .\technic.py 
+
+
+# Protocol
+
+The protocol to the robot has two message types: a 'D' or drive message and the 'B' or bye message. 
+
+## Drive message
+
+Every 'D' message must contains exactly 7 characters.
+
+Example:
++---+---+---+---+---+---+---+
+| 0 | 1 | 2 | 3 | 4 | 5 | 6 |
++---+---+---+---+---+---+---+
+| D | + | 2 | 0 | - | 3 | 0 |
++---+---+---+---+---+---+---+
+
+This command will set the left motor to turn at 20% of its maximum speed and the right motor to turn at 30% of 
+its maximum speed in reverse.
+
+The first character must always be uppercase D, the next 6 characters are used to control the motors:
+
+* All zeros (000000) will stop the motors.
+* The first and 4th character are either a + or a - to indicate the direction of the motor.
+* All other characters are digits between 0 and 9 to indicate the speed of the motor.
+
+To parse a command, the following regex is used `^D([+-0])(\d\d)([+-0])(\d\d)$`. You can expeirment with it here:
+https://regex101.com/r/vLf5D9/1
+
+## Bye message
+
+The bye message is a single character 'B' that indicates that the client is done sending commands and that the hub
+can stop the program.

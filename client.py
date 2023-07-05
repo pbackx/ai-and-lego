@@ -45,17 +45,21 @@ async def main():
         # Tell user to start program on the hub.
         print("Start the program on the hub now with the button.")
 
-        await send(client, b"foo")
+        await send(client, b"D-50+50")
+        await asyncio.sleep(5)
 
-        # Send a few messages to the hub.
-        for i in range(5):
-            await send(client, b"fwd")
-            await asyncio.sleep(5)
-            await send(client, b"rev")
-            await asyncio.sleep(5)
+        await send(client, b"f")
+        await send(client, b"D1")
+        await send(client, b"D-a")
+        await asyncio.sleep(5)
+
+        await send(client, b"D000000")
+
+        await send(client, b"D+50-50")
+        await asyncio.sleep(5)
 
         # Send a message to indicate stop.
-        await send(client, b"bye")
+        await send(client, b"B")
 
     except Exception as e:
         # Handle exceptions.
