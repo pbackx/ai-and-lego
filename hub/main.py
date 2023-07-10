@@ -24,7 +24,7 @@ def surprise():
 
 
 def drive(command: str):
-    left_command = int(command[0:3])
+    left_command = -1 * int(command[0:3])
     right_command = int(command[3:6])
     left.dc(left_command)
     right.dc(right_command)
@@ -34,6 +34,8 @@ keyboard = poll()
 keyboard.register(stdin)
 
 no_cmd_count = 0
+
+stdout.buffer.write("OK: Running")
 
 while True:
     while not keyboard.poll(0):

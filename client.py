@@ -12,6 +12,9 @@ UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 # it when installing the Pybricks firmware.
 HUB_NAME = "Robot Inventor"
 
+# Signal that the hub is connected
+hub_is_running = asyncio.Event()
+
 
 def hub_filter(device, ad):
     return device.name and device.name.lower() == HUB_NAME.lower()
@@ -22,7 +25,10 @@ def handle_disconnect(_):
 
 
 def handle_rx(_, data: bytearray):
-    print("Received:", data.decode('utf-8'))
+    decode = data.decode('utf-8')
+    print("Received:", decode)
+    if decode == "OK: Running":
+        hub_is_running.set()
 
 
 async def send(client, rx_char, data):
@@ -30,10 +36,6 @@ async def send(client, rx_char, data):
 
 
 async def send_vector(client, rx_char, vec: vector.Vector2D):
-    if abs(vec.phi) > math.radians(45):
-        print("Phi is too large! Only 45 or below accepted.")
-        return
-
     print("Sending:", vec.x, vec.y)
     left = 50
     right = 50
@@ -43,10 +45,12 @@ async def send_vector(client, rx_char, vec: vector.Vector2D):
     elif vec.y < 0:
         left = int(50 * (vec.x + abs(vec.y)))
         right = int(50 * (vec.x - abs(vec.y)))
-    left_str = f"{left:02.0f}"
-    right_str = f"{right:02.0f}"
+    left = max(min(left, 99), -99)
+    right = max(min(right, 99), -99)
+    left_str = f"{left:+03.0f}"
+    right_str = f"{right:+03.0f}"
     print("Sending:", left_str, right_str)
-    await send(client, rx_char, b"D+" + bytes(left_str, "utf-8") + b"+" + bytes(right_str, "utf-8"))
+    await send(client, rx_char, b"D" + bytes(left_str, "utf-8") + bytes(right_str, "utf-8"))
 
 
 async def main():
@@ -62,16 +66,15 @@ async def main():
         rx_char = nus.get_characteristic(UART_RX_CHAR_UUID)
 
         print("Start the program on the hub now with the button.")
-
-        # TODO some kind of delay needed here to wait for the program to start
+        await hub_is_running.wait()
 
         await send_vector(client, rx_char, vector.obj(rho=1, phi=0))
         await asyncio.sleep(5)
 
-        await send_vector(client, rx_char, vector.obj(rho=1, phi=math.radians(20)))
+        await send_vector(client, rx_char, vector.obj(rho=1, phi=math.radians(45)))
         await asyncio.sleep(5)
 
-        await send_vector(client, rx_char, vector.obj(rho=1, phi=math.radians(-20)))
+        await send_vector(client, rx_char, vector.obj(rho=1, phi=math.radians(-90)))
         await asyncio.sleep(5)
 
         # Send a message to indicate stop.
