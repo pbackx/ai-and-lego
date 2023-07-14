@@ -1,0 +1,3 @@
+import pygame
+
+BLUETOOTH_DISCOVERY_EVENT = pygame.USEREVENT + 1

@@ -1,0 +1,1 @@
+counterclockwise arrows button from https://openmoji.org/library/emoji-1F504/
