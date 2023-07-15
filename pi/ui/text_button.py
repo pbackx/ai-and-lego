@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import pygame
 
 from pi.ui.button import Button
@@ -9,8 +7,11 @@ from pi.ui.constants import ACCENT1_COLOR
 class TextButton(Button):
     font: pygame.font.Font = None
 
-    def __init__(self, rect: Tuple[int, int, int, int], text: str):
-        super().__init__(rect)
+    def __init__(self,
+                 rect: tuple[int, int, int, int],
+                 text: str,
+                 handle_mouse_click_action: callable = None):
+        super().__init__(rect, handle_mouse_click_action)
         self._text = text
         if self.font is None:
             self.font = pygame.font.SysFont(
@@ -25,8 +26,3 @@ class TextButton(Button):
         y = self.location.y + self.location.height/2 - text_surface.get_height()/2
 
         screen.blit(text_surface, (x, y))
-
-    def handle_mouse_click_action(self):
-        pygame.event.post(pygame.event.Event(pygame.USEREVENT, {"button": self}))
-        # TODO: Make this a custom event and connect to the device
-

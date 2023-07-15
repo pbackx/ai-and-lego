@@ -3,7 +3,7 @@ import threading
 import pygame
 from bleak import BleakScanner, BLEDevice, BleakClient
 
-from events import BLUETOOTH_DISCOVERY_DONE_EVENT
+from events import BLUETOOTH_DISCOVERY_DONE_EVENT, BLUETOOTH_DATA_RECEIVED_EVENT, BLUETOOTH_CONNECTED_EVENT
 
 UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -41,15 +41,26 @@ class HubConnection:
         print("Hub was disconnected.")
 
     def handle_rx(self, _, data: bytearray):
-        decode = data.decode('utf-8')
-        print("Received:", decode)
+        pygame.event.post(pygame.event.Event(BLUETOOTH_DATA_RECEIVED_EVENT, {"data": data}))
+
+    async def send(self, data):
+        await self._client.write_gatt_char(self._rx_char, data)
 
     async def connect(self, hub: BLEDevice):
-        if self._client is not None:
-            await self._client.disconnect()
+        await self.disconnect()
 
         self._client = BleakClient(hub, disconnected_callback=self.handle_disconnect)
         await self._client.connect()
         await self._client.start_notify(UART_TX_CHAR_UUID, self.handle_rx)
         nus = self._client.services.get_service(UART_SERVICE_UUID)
         self._rx_char = nus.get_characteristic(UART_RX_CHAR_UUID)
+        pygame.event.post(pygame.event.Event(BLUETOOTH_CONNECTED_EVENT))
+
+    async def disconnect(self):
+        if self._client is not None:
+            await self._client.disconnect()
+            self._client = None
+
+    async def shutdown(self):
+        await self.send(b"B")
+        await self.disconnect()
