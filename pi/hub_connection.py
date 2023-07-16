@@ -19,6 +19,7 @@ class HubConnection:
     def __init__(self):
         self._client = None
         self._rx_char = None
+        self._running = False
 
     @classmethod
     async def scan(cls):
@@ -43,10 +44,20 @@ class HubConnection:
 
     def handle_rx(self, _, data: bytearray):
         pygame.event.post(pygame.event.Event(BLUETOOTH_DATA_RECEIVED_EVENT, {"data": data}))
+        decode = data.decode('utf-8')
+        if decode == "OK: Running":
+            self._running = True
 
     async def send(self, data):
-        if self._client is not None:
-            await self._client.write_gatt_char(self._rx_char, data)
+        if self._client is not None and self._running:
+            try:
+                await self._client.write_gatt_char(self._rx_char, data)
+            except Exception as e:
+                pygame.event.post(pygame.event.Event(BLUETOOTH_ERROR_EVENT, {
+                    "exception": e,
+                    "message": "Failed to send data to hub."
+                }))
+                await self.disconnect()
 
     async def connect(self, hub: BLEDevice):
         try:
@@ -75,6 +86,8 @@ class HubConnection:
                 "exception": e,
                 "message": "Failed to disconnect from hub."
             }))
+        finally:
+            self._running = False
 
     async def shutdown(self):
         await self.send(b"B")

@@ -16,3 +16,5 @@ BLUETOOTH_CONNECTED_EVENT = pygame.USEREVENT + 5
 # Event to indicate some kind of error occurred.
 # The event data is a dictionary with a "message" and "exception" key
 BLUETOOTH_ERROR_EVENT = pygame.USEREVENT + 6
+# Event to send data to the Bluetooth hub, the event data should be a dictionary with a "data" key
+BLUETOOTH_SEND_DATA_EVENT = pygame.USEREVENT + 7

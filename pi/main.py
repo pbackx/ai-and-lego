@@ -3,9 +3,10 @@ import asyncio
 import pygame
 
 from events import BLUETOOTH_DISCOVERY_START_EVENT, BLUETOOTH_DISCOVERY_DONE_EVENT, BLUETOOTH_CONNECT_EVENT, \
-    BLUETOOTH_DATA_RECEIVED_EVENT, BLUETOOTH_CONNECTED_EVENT, BLUETOOTH_ERROR_EVENT
+    BLUETOOTH_DATA_RECEIVED_EVENT, BLUETOOTH_CONNECTED_EVENT, BLUETOOTH_ERROR_EVENT, BLUETOOTH_SEND_DATA_EVENT
 from hub_connection import HubConnection
-from pi.ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, BACKGROUND_COLOR, TEXT_COLOR
+from pi.ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, BACKGROUND_COLOR
+from pi.ui.control import Control
 from pi.ui.devices import Devices
 from pi.ui.log import Log
 
@@ -20,9 +21,11 @@ font = pygame.font.SysFont("Helvetica Neue,Helvetica,Ubuntu Sans,Bitstream Vera 
 
 connection = HubConnection()
 log = Log(font)
+control = Control(font)
 
 run = True
 loop = asyncio.new_event_loop()
+clock = pygame.time.Clock()
 
 
 def run_once(event_loop: asyncio.AbstractEventLoop):
@@ -32,26 +35,19 @@ def run_once(event_loop: asyncio.AbstractEventLoop):
 
 
 loop.create_task(HubConnection.scan())
+log.add("Scanning for Bluetooth devices...")
 
 while run:
-    screen.fill(BACKGROUND_COLOR)
+    clock.tick(60)
 
-    header = font.render("Robot Control", True, TEXT_COLOR)
-    screen.blit(header, (10, 10))
+    screen.fill(BACKGROUND_COLOR)
 
     devices_display.draw(screen)
     log.draw(screen)
+    control.draw(screen)
 
     key = pygame.key.get_pressed()
-    if key[pygame.K_a]:
-        pass
-    elif key[pygame.K_d]:
-        pass
-    elif key[pygame.K_w]:
-        pass
-    elif key[pygame.K_s]:
-        pass
-    elif key[pygame.K_ESCAPE]:
+    if key[pygame.K_ESCAPE]:
         run = False
 
     for event in pygame.event.get():
@@ -59,7 +55,11 @@ while run:
             run = False
         elif event.type == pygame.MOUSEBUTTONUP:
             devices_display.handle_mouse_click(event.pos)
+        elif event.type == pygame.KEYUP:
+            if key[pygame.K_m]:
+                control.switch_mode()
         elif event.type == BLUETOOTH_DISCOVERY_START_EVENT:
+            log.add("Scanning for Bluetooth devices...")
             loop.create_task(HubConnection.scan())
         elif event.type == BLUETOOTH_DISCOVERY_DONE_EVENT:
             devices_display.set_bluetooth_devices(HubConnection.get_detected_hubs())
@@ -73,6 +73,8 @@ while run:
         elif event.type == BLUETOOTH_ERROR_EVENT:
             log.add(f"Error: {event.message}, check console for more details.")
             print("Error:", event.message, event.exception)
+        elif event.type == BLUETOOTH_SEND_DATA_EVENT:
+            loop.create_task(connection.send(event.data))
 
     pygame.display.update()
     run_once(loop)

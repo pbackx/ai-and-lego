@@ -1,1 +1,1 @@
-counterclockwise arrows button from https://openmoji.org/library/emoji-1F504/
+icons are from https://openmoji.org/ and are licensed under CC BY-SA 4.0
