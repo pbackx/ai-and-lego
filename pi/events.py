@@ -13,3 +13,6 @@ BLUETOOTH_CONNECT_EVENT = pygame.USEREVENT + 3
 BLUETOOTH_DATA_RECEIVED_EVENT = pygame.USEREVENT + 4
 # Event to indicate that the connection was made and the program on the hub can be started
 BLUETOOTH_CONNECTED_EVENT = pygame.USEREVENT + 5
+# Event to indicate some kind of error occurred.
+# The event data is a dictionary with a "message" and "exception" key
+BLUETOOTH_ERROR_EVENT = pygame.USEREVENT + 6

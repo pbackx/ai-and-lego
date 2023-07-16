@@ -3,10 +3,11 @@ import asyncio
 import pygame
 
 from events import BLUETOOTH_DISCOVERY_START_EVENT, BLUETOOTH_DISCOVERY_DONE_EVENT, BLUETOOTH_CONNECT_EVENT, \
-    BLUETOOTH_DATA_RECEIVED_EVENT, BLUETOOTH_CONNECTED_EVENT
+    BLUETOOTH_DATA_RECEIVED_EVENT, BLUETOOTH_CONNECTED_EVENT, BLUETOOTH_ERROR_EVENT
 from hub_connection import HubConnection
 from pi.ui.constants import SCREEN_WIDTH, SCREEN_HEIGHT, BACKGROUND_COLOR, TEXT_COLOR
 from pi.ui.devices import Devices
+from pi.ui.log import Log
 
 pygame.init()
 
@@ -18,6 +19,7 @@ font = pygame.font.SysFont("Helvetica Neue,Helvetica,Ubuntu Sans,Bitstream Vera 
                            "Liberation Sans,Nimbus Sans L,Noto Sans,Calibri,Futura,Beteckna,Arial", 16)
 
 connection = HubConnection()
+log = Log(font)
 
 run = True
 loop = asyncio.new_event_loop()
@@ -34,10 +36,11 @@ loop.create_task(HubConnection.scan())
 while run:
     screen.fill(BACKGROUND_COLOR)
 
-    header = font.render("Robot Inventor", True, TEXT_COLOR)
+    header = font.render("Robot Control", True, TEXT_COLOR)
     screen.blit(header, (10, 10))
 
     devices_display.draw(screen)
+    log.draw(screen)
 
     key = pygame.key.get_pressed()
     if key[pygame.K_a]:
@@ -64,9 +67,12 @@ while run:
             loop.create_task(connection.connect(event.device))
         elif event.type == BLUETOOTH_DATA_RECEIVED_EVENT:
             decode = event.data.decode('utf-8')
-            print("Received:", decode)
+            log.add(f"Received: {decode}")
         elif event.type == BLUETOOTH_CONNECTED_EVENT:
-            print("Connected to hub, start the program!")
+            log.add("Connected to hub, start the program!")
+        elif event.type == BLUETOOTH_ERROR_EVENT:
+            log.add(f"Error: {event.message}, check console for more details.")
+            print("Error:", event.message, event.exception)
 
     pygame.display.update()
     run_once(loop)
