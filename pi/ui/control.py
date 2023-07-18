@@ -1,5 +1,6 @@
 import pygame
 
+from pi.control.random import RandomWalk
 from pi.events import BLUETOOTH_SEND_DATA_EVENT
 from pi.ui.constants import ACCENT3_COLOR, SCREEN_WIDTH, SCREEN_HEIGHT, TEXT_COLOR, ACCENT2_COLOR
 
@@ -18,6 +19,7 @@ class Control:
         self._down = pygame.transform.scale(pygame.image.load('./images/2B07_color.png'), (32, 32))
         self._left = pygame.transform.scale(pygame.image.load('./images/2B05_color.png'), (32, 32))
         self._right = pygame.transform.scale(pygame.image.load('./images/27A1_color.png'), (32, 32))
+        self._automated_algorithm = RandomWalk()
 
     def draw_key(self, screen: pygame.Surface, icon: pygame.Surface, x: int, y: int):
         pygame.draw.rect(screen, ACCENT2_COLOR, (x, y, 32, 32))
@@ -61,7 +63,7 @@ class Control:
             else:
                 self.send_data(b'D000000')
         else:
-            pass
+            self.send_data(self._automated_algorithm.next_step())
 
         switch_mode = self._font.render("Switch mode by pressing M", True, TEXT_COLOR)
         screen.blit(switch_mode, (self.location_x - switch_mode.get_width() / 2,
@@ -80,3 +82,4 @@ class Control:
 
     def switch_mode(self):
         self._manual = not self._manual
+        self._automated_algorithm.reset()

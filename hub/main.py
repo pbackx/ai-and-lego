@@ -1,4 +1,4 @@
-from pybricks.pupdevices import Motor
+from pybricks.pupdevices import Motor, UltrasonicSensor
 from pybricks.parameters import Port, Color
 from pybricks.tools import wait
 from pybricks.hubs import InventorHub
@@ -12,6 +12,9 @@ hub = InventorHub()
 left = Motor(Port.A)
 right = Motor(Port.B)
 protocol = DriveProtocol()
+
+head_lights = UltrasonicSensor(Port.D)
+head_lights.lights.on((75, 75, 25, 25))
 
 
 def surprise():
@@ -50,6 +53,7 @@ while True:
     if rec == b"D":
         protocol.clear()
     elif rec == b"B":
+        head_lights.lights.off()
         left.stop()
         right.stop()
         break
