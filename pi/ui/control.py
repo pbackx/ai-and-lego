@@ -15,9 +15,13 @@ class Control:
         self._previousData = None
         self._previousTime = 0
         self._up = pygame.transform.scale(pygame.image.load('./images/2B06_color.png'), (32, 32))
+        self._down = pygame.transform.scale(pygame.image.load('./images/2B07_color.png'), (32, 32))
+        self._left = pygame.transform.scale(pygame.image.load('./images/2B05_color.png'), (32, 32))
+        self._right = pygame.transform.scale(pygame.image.load('./images/27A1_color.png'), (32, 32))
 
     def draw_key(self, screen: pygame.Surface, icon: pygame.Surface, x: int, y: int):
         pygame.draw.rect(screen, ACCENT2_COLOR, (x, y, 32, 32))
+        screen.blit(icon, (x, y))
 
     def draw(self, screen: pygame.Surface):
         if self._manual:
@@ -32,15 +36,18 @@ class Control:
                           self._up,
                           self.location_x - 32 / 2,
                           self.location_y - self.height / 2 + header.get_height() + 2 * 10)
-            pygame.draw.rect(screen, ACCENT2_COLOR, (self.location_x - 32 / 2,
-                                                     self.location_y - self.height / 2 + header.get_height() + 32 + 3 * 10,
-                                                     32, 32))
-            pygame.draw.rect(screen, ACCENT2_COLOR, (self.location_x - 32 / 2 - 32 - 10,
-                                                     self.location_y - self.height / 2 + header.get_height() + 32 + 3 * 10,
-                                                     32, 32))
-            pygame.draw.rect(screen, ACCENT2_COLOR, (self.location_x - 32 / 2 + 32 + 10,
-                                                     self.location_y - self.height / 2 + header.get_height() + 32 + 3 * 10,
-                                                     32, 32))
+            self.draw_key(screen,
+                          self._down,
+                          self.location_x - 32 / 2,
+                          self.location_y - self.height / 2 + header.get_height() + 32 + 3 * 10)
+            self.draw_key(screen,
+                          self._left,
+                          self.location_x - 32 / 2 - 32 - 10,
+                          self.location_y - self.height / 2 + header.get_height() + 32 + 3 * 10)
+            self.draw_key(screen,
+                          self._right,
+                          self.location_x - 32 / 2 + 32 + 10,
+                          self.location_y - self.height / 2 + header.get_height() + 32 + 3 * 10)
 
             key = pygame.key.get_pressed()
             if key[pygame.K_UP]:
@@ -61,8 +68,12 @@ class Control:
                                   self.location_y + self.height / 2 + 10))
 
     def send_data(self, data: bytes):
-        if data == self._previousData and pygame.time.get_ticks() - self._previousTime < 100:
-            return
+        if data == self._previousData:
+            if pygame.time.get_ticks() - self._previousTime < 100:
+                return
+            elif data == b'D000000':
+                return
+
         self._previousData = data
         self._previousTime = pygame.time.get_ticks()
         pygame.event.post(pygame.event.Event(BLUETOOTH_SEND_DATA_EVENT, {'data': data}))
