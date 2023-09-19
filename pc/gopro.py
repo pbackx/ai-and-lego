@@ -3,11 +3,10 @@
 
 import argparse
 import asyncio
+import datetime
 import json
 import sys
-import time
 from binascii import hexlify
-from pprint import pprint
 from typing import Optional
 
 import requests
@@ -95,15 +94,33 @@ async def main(identifier: Optional[str]) -> None:
 
         print("Connected to GoPro wifi")
 
-        response = requests.get(f"{GOPRO_BASE_URL}/gopro/camera/stream/start")
-        response.raise_for_status()
-        pprint(json.dumps(response.json()))
+        response = requests.get(f"{GOPRO_BASE_URL}/gopro/media/list")
+        response_json = response.json()
+        file_list = response_json['media'][0]['fs']
+        print(f'Found {len(file_list)} files')
+        last_cre = 0
+        last_cre_index = 0
+        for index, file in enumerate(file_list):
+            if int(file['cre']) > last_cre:
+                last_cre = int(file['cre'])
+                last_cre_index = index
+        last_file = file_list[last_cre_index]
+        print(f'Most recent file at {last_cre_index}: {json.dumps(last_file, indent=2)}')
+        print(datetime.datetime.utcfromtimestamp(int(last_file['cre'])))
 
-        time.sleep(10)
+        # response = requests.get(f"{GOPRO_BASE_URL}/gopro/camera/stream/start")
+        # response.raise_for_status()
+        # print(json.dumps(response.json()))
+        #
+        # time.sleep(10)
+        # print("You can now watch the preview stream at udp://@:8554")
 
-        response = requests.get(f"{GOPRO_BASE_URL}/gopro/camera/stream/stop")
-        response.raise_for_status()
-        pprint(json.dumps(response.json()))
+        # TODO capture a single image
+
+        #
+        # response = requests.get(f"{GOPRO_BASE_URL}/gopro/camera/stream/stop")
+        # response.raise_for_status()
+        # print(json.dumps(response.json()))
 
     finally:
         wifi.disconnect(interface, ssid)

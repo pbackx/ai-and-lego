@@ -56,6 +56,9 @@ def connect(ssid: str, password: str) -> str:
         # Strip leading whitespace and then the first two chars of remaining (i.e. " :")
         interfaces.append(interface.strip()[2:])
 
+    if len(interfaces) != 1:
+        raise RuntimeError(f"Expected 1 wireless interface, found {len(interfaces)}")
+
     interface = interfaces[0]
     print(f"Connecting to {ssid} on {interface}...")
 

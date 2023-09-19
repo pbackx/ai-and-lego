@@ -79,7 +79,7 @@ async def connect_ble(
             device = matched_devices[0]
 
             print(f"Establishing BLE connection to {device}...")
-            client = BleakClient(device)
+            client = BleakClient(device, winrt={"use_cached_services": False})
             await client.connect(timeout=15)
             print("BLE Connected!")
 
