@@ -1,6 +1,9 @@
 bleak==0.21.1
+keyboard==0.13.5
+opencv-python==4.8.1.78
 # pybricks I should split this in two projects, one for micropython and one for python
 # pybricksdev
 pygame==2.5.1
 requests==2.31.0
+schedule==1.2.1
 vector==1.1.1

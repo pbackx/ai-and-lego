@@ -3,19 +3,18 @@
 
 import argparse
 import asyncio
-import datetime
-import json
 import sys
+import traceback
 from binascii import hexlify
 from typing import Optional
 
 import requests
-# import pywifi
 from bleak import BleakGATTCharacteristic
 
 from gopro import connect_ble
 from gopro.response import Response
 from gopro import wifi
+from capture import capture
 
 GOPRO_BASE_UUID = "b5f9{}-aa8d-11e3-9046-0002a5d5c51b"
 GOPRO_BASE_URL = "http://10.5.5.9:8080"
@@ -94,35 +93,32 @@ async def main(identifier: Optional[str]) -> None:
 
         print("Connected to GoPro wifi")
 
-        response = requests.get(f"{GOPRO_BASE_URL}/gopro/media/list")
-        response_json = response.json()
-        file_list = response_json['media'][0]['fs']
-        print(f'Found {len(file_list)} files')
-        last_cre = 0
-        last_cre_index = 0
-        for index, file in enumerate(file_list):
-            if int(file['cre']) > last_cre:
-                last_cre = int(file['cre'])
-                last_cre_index = index
-        last_file = file_list[last_cre_index]
-        print(f'Most recent file at {last_cre_index}: {json.dumps(last_file, indent=2)}')
-        print(datetime.datetime.utcfromtimestamp(int(last_file['cre'])))
+        # response = requests.get(f"{GOPRO_BASE_URL}/gopro/media/list")
+        # response_json = response.json()
+        # file_list = response_json['media'][0]['fs']
+        # print(f'Found {len(file_list)} files')
+        # last_cre = 0
+        # last_cre_index = 0
+        # for index, file in enumerate(file_list):
+        #     if int(file['cre']) > last_cre:
+        #         last_cre = int(file['cre'])
+        #         last_cre_index = index
+        # last_file = file_list[last_cre_index]
+        # print(f'Most recent file at {last_cre_index}: {json.dumps(last_file, indent=2)}')
+        # print(datetime.datetime.utcfromtimestamp(int(last_file['cre'])))
 
-        # response = requests.get(f"{GOPRO_BASE_URL}/gopro/camera/stream/start")
-        # response.raise_for_status()
-        # print(json.dumps(response.json()))
-        #
-        # time.sleep(10)
-        # print("You can now watch the preview stream at udp://@:8554")
+        print("Starting video stream")
+        response = requests.get(f"{GOPRO_BASE_URL}/gopro/camera/stream/start")
+        # TODO if the video stream was not stopped, this returns a 409 Conflict error, which can be ignored
+        response.raise_for_status()
 
-        # TODO capture a single image
-
-        #
-        # response = requests.get(f"{GOPRO_BASE_URL}/gopro/camera/stream/stop")
-        # response.raise_for_status()
-        # print(json.dumps(response.json()))
+        print("Capturing video stream")
+        capture(host="@10.5.5.9", port=8554)
 
     finally:
+        print("Stopping video stream")
+        requests.get(f"{GOPRO_BASE_URL}/gopro/camera/stream/stop", timeout=1)
+        print("Disconnecting from GoPro wifi")
         wifi.disconnect(interface, ssid)
         await client.disconnect()
 
@@ -142,7 +138,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main(args.identifier))
     except Exception as e:  # pylint: disable=broad-exception-caught
-        print(e)
+        traceback.print_exception(e)
         sys.exit(-1)
     else:
         sys.exit(0)
