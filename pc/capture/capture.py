@@ -3,10 +3,10 @@ import time
 
 
 def capture(host, port, capture_interval=10, total_time=60):
-    print(f"Capturing frames from {host}:{port}")
+    print(f"Connecting to video stream at {host}:{port}.")
     cap = cv2.VideoCapture(f"udp://{host}:{port}")
 
-    print("Starting timer")
+    print("Starting capture.")
     start_time = time.time()
     frame_count = 0
 

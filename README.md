@@ -1,16 +1,28 @@
+# Introduction
+
+This repository contains code to control a Lego Mindstorms Robot and to capture images from a webcam that is
+on the robot.
+
+In a next step, these images will be used to train a neural network to detect objects.
+
+The repository is split into two parts:
+
+- The `hub` folder contains the code that will ron on the Lego Mindstorms Robot.
+- The `client` folder contains the code that will run on your computer. This is itself split into two parts:
+  - The `control` folder contains code for a simple program to control the robot.
+  - The `capture` has code to capture images (using a GoPro).
+
 # Initial
 
 First install Python 3.
 
 Create and activate a virtual environment
 
-    ```powershell
     python -m venv venv
     .\venv\Scripts\activate
 
 Now install the requirements:
 
-    ```powershell
     pip install -r requirements.txt
 
 # Mindstorms Robot Inventor
@@ -27,32 +39,6 @@ Just copy-and-paste the `hub.py` code into the PyBricks editor.
 Once the hub program is on the hub, it is important to disconnect the hub from the PyBricks website.
 To do this, simply press the Bluetooth button on the PyBricks editor. The little beams will 
 disappear to indicate that the hub is no longer connected.
-
-Now you can run the client program on your computer:
-
-    ```powershell
-    python client.py
-
-When it has detected the hub, it will ask you to start the program by pressing the big button.
-
-It is also possible to use pybricksdev, but this does not offer any advantages over the PyBricks website.
-If you want to use this approach, check the next section.
-
-
-# EV3
-
-This is currently not very well developed, but the principal is exactly the same as for the Robot Inventor Hub.
-
-Run the program
-
-    ```powershell
-    pybricksdev run ble .\technic.py
-
-Or using the name that you gave the hub during the firmware installation:
-
-    ```powershell
-    pybricksdev run ble -n "Technic Hub" .\technic.py 
-
 
 # Protocol
 
