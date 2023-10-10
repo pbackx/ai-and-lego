@@ -1,9 +1,43 @@
 import asyncio
+# msvcrt is Windows only, you could try with the 'getch' package instead: https://stackoverflow.com/a/74583041/227081
+import msvcrt
 import sys
 import time
 import traceback
 
 from hub_connection import HubConnection
+
+ESCAPE = 27
+
+
+async def arrow(key_code, connection):
+    # TODO need some way to cancel previous commands if a new one is received
+    if key_code == 72:
+        print("Up arrow pressed")
+        await connection.send(b'D+50+50')
+    elif key_code == 80:
+        print("Down arrow pressed")
+    elif key_code == 75:
+        print("Left arrow pressed")
+    elif key_code == 77:
+        print("Right arrow pressed")
+    else:
+        print(f"Unknown arrow key {key_code}")
+
+
+async def read_keyboard(connection):
+    while True:
+        while msvcrt.kbhit():
+            # https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/getch-getwch?view=msvc-170
+            # Note that this may not work properly if you run it inside an IDE. For IntelliJ IDEA and PyCharm you need
+            # to enable "Emulate terminal in output console" in the Run/Debug configuration.
+            key = msvcrt.getch()
+            if ord(key) == 0xe0:
+                await arrow(ord(msvcrt.getch()), connection)
+
+            if key == b"q" or ord(key) == ESCAPE:
+                return
+        await asyncio.sleep(0.1)
 
 
 async def main():
@@ -33,11 +67,12 @@ async def main():
                 return
             await asyncio.sleep(1)
 
-        print("Hub is running, you can now control the robot.")
+        print("Hub is running, you can now control the robot with the arrow keys (q to quit).")
 
-        await connection.send(b'D+50+50')
-
+        keyboard_task = asyncio.create_task(read_keyboard(connection))
+        await keyboard_task
     finally:
+        print("Quitting...")
         await connection.shutdown()
 
 
