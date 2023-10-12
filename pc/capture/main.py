@@ -1,13 +1,14 @@
 import asyncio
 import sys
 import traceback
+from signal import SIGTERM, SIGINT
 
 import gopro
 import capture
 from gopro.constants import GOPRO_IP
 
 
-async def main():
+async def main(loop: asyncio.AbstractEventLoop):
     print("===========================")
     print("Image capture using a GoPro")
     print("===========================")
@@ -40,23 +41,32 @@ async def main():
         gopro_wifi.connect()
 
         if not gopro_wifi.wait_for_connection(10):
+            # Note that this seems to often fail if I first turned on the GoPro.
+            # A second run of the program usually works.
             print("Failed to connect to GoPro wifi")
             return
 
         gopro_wifi.start_preview()
 
-        print("Capturing video stream")
-        capture.capture(host=f"@{GOPRO_IP}", port=8554)
+        print("Capturing video stream (ctrl-c to stop)")
+        capture_task = loop.create_task(capture.start_capture(host=f"@{GOPRO_IP}", port=8554, folder='../../training_data'))
+        for signal in [SIGINT, SIGTERM]:
+            # Cancel the capture task when the program is terminated
+            loop.add_signal_handler(signal, capture_task.cancel)
+        await capture_task # TODO for some reason the task is not awaited and the finally close is immediately executed
     finally:
+        print("Stopping capture")
         if gopro_wifi:
-            gopro_wifi.stop_preview()
+            if gopro_wifi.is_connected():
+                gopro_wifi.stop_preview()
             gopro_wifi.disconnect()
         await gopro_ble.disconnect()
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        main_loop = asyncio.new_event_loop()
+        main_loop.run_until_complete(main(main_loop))
     except Exception as e:
         traceback.print_exception(e)
         sys.exit(-1)

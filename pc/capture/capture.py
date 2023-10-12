@@ -1,38 +1,51 @@
+import asyncio
+import os
+import traceback
+
 import cv2
-import time
+import schedule
 
 
-def capture(host, port, capture_interval=10, total_time=60):
+async def start_capture(host, port, folder: str, capture_interval=10):
+    if not os.path.exists(folder) or not os.path.isdir(folder):
+        os.makedirs(folder)
+
     print(f"Connecting to video stream at {host}:{port}.")
     cap = cv2.VideoCapture(f"udp://{host}:{port}")
 
     print("Starting capture.")
-    start_time = time.time()
-    frame_count = 0
 
-    # TODO it is probably much better to use the schedule library to capture frames at a regular interval
-    # Instead of this busy loop
-    # https://pypi.org/project/schedule/
-    while frame_count < 5:
-        try:
+    # schedule.every(capture_interval).seconds.do(capture_frame, cap, folder)
+
+    try:
+        while True:
+            # schedule.run_pending()
+            capture_frame(cap, folder)
+            await asyncio.sleep(capture_interval)
+    finally:
+        cap.release()
+
+
+frame_count = 0
+
+
+def capture_frame(cap, folder):
+    try:
+        global frame_count
+
+        ret = False
+        frame = None
+
+        while not ret:
+            # Keep trying to capture a frame until we succeed
+            # TODO this should have a timeout
             ret, frame = cap.read()
 
-            # Check if it's time to save a frame
-            current_time = time.time()
-            if ret and current_time - start_time >= capture_interval:
-                frame_count += 1
-                # TODO create folder if it doesn't exist otherwise writing will fail silently
-                image_filename = f"capture/frame_{frame_count}.png"
+        frame_count += 1
+        image_filename = os.path.join(folder, f"frame_{frame_count}.png")
 
-                # Save the frame as an image
-                cv2.imwrite(image_filename, frame)
-                print(f"Saved {image_filename}")
-
-                # Reset the timer
-                start_time = current_time
-
-        except Exception as e:
-            print(f"Error: {e}")
-            break
-
-    cap.release()
+        cv2.imwrite(image_filename, frame)
+        print(f"Saved {image_filename}")
+    except Exception as e:
+        print(f"Failed to capture frame: {e}")
+        traceback.print_exc()

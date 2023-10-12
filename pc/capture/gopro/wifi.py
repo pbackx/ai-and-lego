@@ -53,6 +53,7 @@ class GoProWifiClient:
         self.ssid = ssid
         self.password = password
         self.interface = None
+        self.connected = False
 
     def connect(self):
         response = run_cmd("netsh wlan show interfaces")
@@ -95,9 +96,13 @@ class GoProWifiClient:
             status = self.get_connection_status()
             print(f"Wifi connection status: {status}")
             if status == "connected":
+                self.connected = True
                 return True
             time.sleep(1)
         return False
+
+    def is_connected(self) -> bool:
+        return self.connected
 
     def disconnect(self):
         if self.interface:
