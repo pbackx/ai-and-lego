@@ -1,5 +1,4 @@
 import asyncio
-# msvcrt is Windows only, you could try with the 'getch' package instead: https://stackoverflow.com/a/74583041/227081
 import sys
 import time
 import traceback
@@ -10,9 +9,6 @@ from buffered_send import BufferedSend
 from hub_connection import HubConnection
 
 keyboard_queue = asyncio.Queue()
-
-ESCAPE = 27
-
 action_map = {
     keyboard.Key.up: b'D+50+50',
     keyboard.Key.down: b'D-50-50',
@@ -30,8 +26,8 @@ def arrow(key: [keyboard.Key, bool], connection: BufferedSend):
 
 
 def on_press(loop):
-    # Both on_press and on_release run in a separate thread. The way they can access the queue from is through this
-    # convoluted method call:
+    # Both on_press and on_release run in a separate thread created by the keyboard listener code. The way they can
+    # access the queue from their thread is through this convoluted method call:
     return lambda key: asyncio.run_coroutine_threadsafe(keyboard_queue.put([key, True]), loop)
 
 
