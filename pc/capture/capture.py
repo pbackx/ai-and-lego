@@ -1,51 +1,53 @@
 import asyncio
 import os
-import traceback
+import queue
+import threading
 
 import cv2
-import schedule
 
 
-async def start_capture(host, port, folder: str, capture_interval=10):
+# This thread reads all the frames from the video stream and discards them. There is no general way to skip frames.
+class VideoCaptureThread:
+    def __init__(self, host, port):
+        print(f"Connecting to stream at {host}:{port}")
+        self.cap = cv2.VideoCapture(f"udp://{host}:{port}")
+        self.q = queue.Queue()
+        self.thread = threading.Thread(target=self._reader)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def _reader(self):
+        while True:
+            ret, frame = self.cap.read()
+            if not ret:
+                break
+            if not self.q.empty():
+                try:
+                    self.q.get_nowait()  # discard previous (unprocessed) frame
+                except queue.Empty:
+                    pass
+            self.q.put(frame)
+
+    def read(self):
+        return self.q.get()
+
+
+async def start_capture(host, port, folder, capture_interval=1):
     if not os.path.exists(folder) or not os.path.isdir(folder):
         os.makedirs(folder)
 
-    print(f"Connecting to video stream at {host}:{port}.")
-    cap = cv2.VideoCapture(f"udp://{host}:{port}")
+    capture_thread = VideoCaptureThread(host, port)
 
-    print("Starting capture.")
+    print("Starting capture")
 
-    # schedule.every(capture_interval).seconds.do(capture_frame, cap, folder)
-
+    frame_count = 0
     try:
         while True:
-            # schedule.run_pending()
-            capture_frame(cap, folder)
+            frame_count += 1
+            image_filename = os.path.join(folder, f"frame_{frame_count}.png")
+            frame = capture_thread.read()
+            cv2.imwrite(image_filename, frame)
+            print(f"Saved {image_filename}")
             await asyncio.sleep(capture_interval)
     finally:
-        cap.release()
-
-
-frame_count = 0
-
-
-def capture_frame(cap, folder):
-    try:
-        global frame_count
-
-        ret = False
-        frame = None
-
-        while not ret:
-            # Keep trying to capture a frame until we succeed
-            # TODO this should have a timeout
-            ret, frame = cap.read()
-
-        frame_count += 1
-        image_filename = os.path.join(folder, f"frame_{frame_count}.png")
-
-        cv2.imwrite(image_filename, frame)
-        print(f"Saved {image_filename}")
-    except Exception as e:
-        print(f"Failed to capture frame: {e}")
-        traceback.print_exc()
+        capture_thread.cap.release()

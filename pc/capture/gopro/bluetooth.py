@@ -74,4 +74,4 @@ class GoProBLEClient:
         return ssid, password
 
     async def disconnect(self):
-        return await self.client.disconnect()
+        await self.client.disconnect()

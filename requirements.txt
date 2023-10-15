@@ -5,5 +5,4 @@ opencv-python==4.8.1.78
 pygame==2.5.1
 pynput==1.7.6
 requests==2.31.0
-schedule==1.2.1
 vector==1.1.1

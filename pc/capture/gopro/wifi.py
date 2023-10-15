@@ -1,8 +1,8 @@
+import asyncio
 import os
 import re
 import subprocess
 import tempfile
-import time
 
 import requests
 
@@ -91,14 +91,14 @@ class GoProWifiClient:
         else:
             return None
 
-    def wait_for_connection(self, timeout: int = 10) -> bool:
+    async def wait_for_connection(self, timeout: int = 10) -> bool:
         for _ in range(timeout):
             status = self.get_connection_status()
             print(f"Wifi connection status: {status}")
             if status == "connected":
                 self.connected = True
                 return True
-            time.sleep(1)
+            await asyncio.sleep(1)
         return False
 
     def is_connected(self) -> bool:
@@ -112,8 +112,9 @@ class GoProWifiClient:
     @staticmethod
     def start_preview():
         response = requests.get(f"{GOPRO_URL}/gopro/camera/stream/start")
-        # TODO if the video stream was not stopped, this returns a 409 Conflict error, which can be ignored
-        response.raise_for_status()
+        if response.status_code != 409:
+            # 409 means the preview is already running, which we can safely ignore
+            response.raise_for_status()
 
     @staticmethod
     def stop_preview():
