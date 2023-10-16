@@ -55,9 +55,10 @@ async def main(state: CaptureState):
         state.gopro_wifi.start_preview()
 
         print("Capturing video stream (ctrl-c to stop)")
-        state.capture_task = state.loop.create_task(
-            capture.start_capture(host=f"@{GOPRO_IP}", port=8554, folder='../../training_data'))
-        await state.capture_task
+        state.capture_task = capture.CaptureTask(host=f"@{GOPRO_IP}", port=8554, folder='../../training_data')
+
+        task = state.loop.create_task(state.capture_task.start())
+        await task
     except Exception as ex:
         traceback.print_exception(ex)
 
@@ -65,7 +66,7 @@ async def main(state: CaptureState):
 async def close(state: CaptureState):
     print("Stopping capture")
     if state.capture_task:
-        state.capture_task.cancel()
+        await state.capture_task.stop()
     print("Disconnecting from GoPro Wifi")
     if state.gopro_wifi:
         if state.gopro_wifi.is_connected():
