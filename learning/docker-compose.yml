@@ -1,0 +1,17 @@
+services:
+  tensorflow-jupyter:
+    build: .
+    user: "1000:1000"
+    ports:
+      - "8888:8888"
+    volumes:
+      - /mnt/c/dev/ai-and-lego:/project
+      - /home/peter/jupyter-config:/.jupyter
+    deploy:
+      # https://docs.docker.com/compose/gpu-support/
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
