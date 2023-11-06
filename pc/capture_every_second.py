@@ -1,10 +1,7 @@
 import asyncio
 import traceback
 
-import gopro
-import capture
-from gopro.constants import GOPRO_IP
-
+from capture import connect_and_start_preview, CaptureTask, GOPRO_IP
 
 class CaptureState:
     loop = None
@@ -35,27 +32,10 @@ async def main(state: CaptureState):
     print()
 
     try:
-        state.gopro_ble = gopro.GoProBLEClient()
-
-        ble_connected = await state.gopro_ble.connect()
-        if not ble_connected:
-            raise Exception("Failed to connect to GoPro via BLE")
-
-        ssid, password = await state.gopro_ble.enable_wifi()
-        print(f"GoPro wifi enabled. SSID: {ssid}, password: {password}")
-
-        state.gopro_wifi = gopro.GoProWifiClient(ssid, password)
-        state.gopro_wifi.connect()
-
-        if not await state.gopro_wifi.wait_for_connection(30):
-            # Note that this takes quite a long time when the GoPro was just turned on
-            print("Failed to connect to GoPro wifi")
-            return
-
-        state.gopro_wifi.start_preview()
+        state.gopro_ble, state.gopro_wifi = await connect_and_start_preview()
 
         print("Capturing video stream (ctrl-c to stop)")
-        state.capture_task = capture.CaptureTask(host=f"@{GOPRO_IP}", port=8554, folder='../../training_data')
+        state.capture_task = CaptureTask(host=f"@{GOPRO_IP}", port=8554, folder='../training_data')
 
         task = state.loop.create_task(state.capture_task.start())
         await task
@@ -69,8 +49,6 @@ async def close(state: CaptureState):
         await state.capture_task.stop()
     print("Disconnecting from GoPro Wifi")
     if state.gopro_wifi:
-        if state.gopro_wifi.is_connected():
-            state.gopro_wifi.stop_preview()
         state.gopro_wifi.disconnect()
     print("Disconnecting from GoPro BLE")
     if state.gopro_ble:

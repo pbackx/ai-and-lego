@@ -1,21 +1,15 @@
-from bleak import BleakScanner, BLEDevice, BleakClient
+from bleak import BLEDevice, BleakClient
 
 UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
-
 class HubConnection:
 
-    def __init__(self):
-        self._client = None
+    def __init__(self, hub: BLEDevice):
+        self._client = BleakClient(hub, disconnected_callback=self.handle_disconnect)
         self._rx_char = None
         self._running = False
-
-    @classmethod
-    async def scan(cls):
-        devices = await BleakScanner.discover(return_adv=False, service_uuids=[UART_SERVICE_UUID])
-        return [d for d in devices if d.name]
 
     def handle_disconnect(self, _):
         print("Hub was disconnected.")
@@ -33,11 +27,8 @@ class HubConnection:
                 print(f"Failed to send data to hub: {e}.")
                 await self.disconnect()
 
-    async def connect(self, hub: BLEDevice) -> bool:
+    async def connect(self) -> bool:
         try:
-            await self.disconnect()
-
-            self._client = BleakClient(hub, disconnected_callback=self.handle_disconnect)
             await self._client.connect()
             await self._client.start_notify(UART_TX_CHAR_UUID, self.handle_rx)
             nus = self._client.services.get_service(UART_SERVICE_UUID)
@@ -50,17 +41,16 @@ class HubConnection:
 
     async def disconnect(self):
         try:
-            if self._client is not None:
+            if self._client is not None and self._client.is_connected:
                 await self._client.disconnect()
-                self._client = None
+            self._client = None
         except Exception as e:
             print(f"Failed to disconnect from hub: {e}.")
         finally:
             self._running = False
 
     async def shutdown(self):
-        await self.send(b"B")
-        await self.disconnect()
+        self.disconnect() # We are wilfully ignoring the result of this call because Windows tends to timeout this operation
 
     def is_connected(self):
         return self._client and self._client.is_connected

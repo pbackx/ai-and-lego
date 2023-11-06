@@ -74,4 +74,6 @@ class GoProBLEClient:
         return ssid, password
 
     async def disconnect(self):
-        await self.client.disconnect()
+        if self.client is not None and self.client.is_connected:
+            # We are wilfully ignoring the result of this call because Windows tends to timeout this operation
+            self.client.disconnect()

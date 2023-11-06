@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from hub_connection import HubConnection
+from .hub_connection import HubConnection
 
 
 def current_time():
@@ -15,7 +15,7 @@ class BufferedSend:
         self.previous_data = None
         self.previous_time = current_time()
 
-    def send(self, data: bytes):
+    async def send(self, data: bytes):
         if data == self.previous_data:
             if current_time() - self.previous_time < 100:
                 return
@@ -24,4 +24,14 @@ class BufferedSend:
 
         self.previous_data = data
         self.previous_time = current_time()
-        asyncio.create_task(self.connection.send(data))
+        await asyncio.create_task(self.connection.send(data))
+
+    async def drive(self, left: int, right: int):
+        await self.send(f"D{left:+02}{right:+02}".encode('ascii'))
+
+    def stop(self):
+        self.send(b'D000000')
+
+    async def shutdown(self):
+        await self.connection.send(b'B')
+        await self.connection.shutdown()

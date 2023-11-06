@@ -105,6 +105,8 @@ class GoProWifiClient:
         return self.connected
 
     def disconnect(self):
+        if self.is_connected():
+            self.stop_preview()
         if self.interface:
             run_cmd(f'netsh wlan disconnect interface="{self.interface}"')
             run_cmd(f'netsh wlan delete profile name="{self.ssid}"')
