@@ -10,14 +10,32 @@ class HubConnection:
         self._client = BleakClient(hub, disconnected_callback=self.handle_disconnect)
         self._rx_char = None
         self._running = False
+        self._buffer = ""
 
     def handle_disconnect(self, _):
         print("Hub was disconnected.")
 
     def handle_rx(self, _, data: bytearray):
-        decode = data.decode('utf-8')
-        if decode == "OK: Running":
-            self._running = True
+        self._buffer += data.decode('utf-8')
+        if self._buffer.find(' KO') != -1:
+            decode = self._buffer[:self._buffer.index(' KO')]
+            self._buffer = self._buffer[self._buffer.index(' KO')+3:]
+            if decode.startswith('OK: '):
+                decode = decode[4:]
+                if decode == "Running":
+                    self._running = True
+                else:
+                    print(decode)
+                    # data is |-separated list of sensor values:
+                    # - pitch
+                    # - roll
+                    # - acceleration along x axis
+                    # - acceleration along y axis
+                    # - acceleration along z axis
+                    # - angular velocity around x axis
+                    # - angular velocity around y axis
+                    # - angular velocity around z axis
+                    # - distance of ultrasonic sensor
 
     async def send(self, data):
         if self._client is not None and self._running:
@@ -50,7 +68,7 @@ class HubConnection:
             self._running = False
 
     async def shutdown(self):
-        self.disconnect() # We are wilfully ignoring the result of this call because Windows tends to timeout this operation
+        await self.disconnect()
 
     def is_connected(self):
         return self._client and self._client.is_connected

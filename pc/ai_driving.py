@@ -13,6 +13,22 @@ class Connections:
     gopro_ble: GoProBLEClient = None
     gopro_wifi: GoProWifiClient = None
 
+    async def shutdown_ble(self):
+        if self.hub_connection is not None:
+            await asyncio.wait_for(self.hub_connection.shutdown(), timeout=10)
+
+    async def shutdown_wifi(self):
+        if connections.gopro_wifi is not None:
+            connections.gopro_wifi.disconnect()
+        if connections.gopro_ble is not None:
+            await asyncio.wait_for(connections.gopro_ble.disconnect(), timeout=10)
+
+    def shutdown(self):
+        return [
+            self.shutdown_ble(),
+            self.shutdown_wifi(),
+        ]
+
 
 async def main(c: Connections):
     # Connect to Mindstorms Hub
@@ -44,18 +60,13 @@ async def main(c: Connections):
 
 if __name__ == "__main__":
     connections = Connections()
+    main_loop = asyncio.new_event_loop()
     try:
-        main_loop = asyncio.new_event_loop()
         main_loop.run_until_complete(main(connections))
     except Exception as e:
         traceback.print_exception(e)
         sys.exit(-1)
     finally:
         print("Closing connections")
-        if connections.hub_connection is not None:
-            asyncio.run(connections.hub_connection.shutdown())
-        if connections.gopro_wifi is not None:
-            connections.gopro_wifi.disconnect()
-        if connections.gopro_ble is not None:
-            asyncio.run(connections.gopro_ble.disconnect())
+        main_loop.run_until_complete(asyncio.wait(connections.shutdown()))
         print("Done")

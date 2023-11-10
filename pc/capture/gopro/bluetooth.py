@@ -75,5 +75,4 @@ class GoProBLEClient:
 
     async def disconnect(self):
         if self.client is not None and self.client.is_connected:
-            # We are wilfully ignoring the result of this call because Windows tends to timeout this operation
-            self.client.disconnect()
+            await self.client.disconnect()

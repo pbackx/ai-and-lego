@@ -32,13 +32,19 @@ def drive(command: str):
     left.dc(left_command)
     right.dc(right_command)
 
+def read_sensors():
+    data = list(hub.imu.tilt()) + \
+           list(hub.imu.acceleration()) + \
+           list(hub.imu.angular_velocity()) + \
+           [head_lights.distance()]
+    return '|'.join([str(d) for d in data])
 
 keyboard = poll()
 keyboard.register(stdin)
 
 no_cmd_count = 0
 
-stdout.buffer.write("OK: Running")
+stdout.buffer.write("OK: Running KO")
 
 while True:
     while not keyboard.poll(0):
@@ -60,7 +66,7 @@ while True:
     else:
         if not protocol.add_byte(rec):
             surprise()
-            stdout.buffer.write("NOK: " + "".join([str(x, 'utf-8') for x in protocol.get_bytes()]) + str(rec, 'utf-8'))
+            stdout.buffer.write("NOK: " + "".join([str(x, 'utf-8') for x in protocol.get_bytes()]) + str(rec, 'utf-8') + " KO")
             protocol.clear()
             continue
     no_cmd_count = 0
@@ -69,4 +75,4 @@ while True:
         full_cmd = "".join([str(x, 'utf-8') for x in protocol.get_bytes()])
         drive(full_cmd)
         protocol.clear()
-        stdout.buffer.write("OK: " + full_cmd)
+        stdout.buffer.write("OK: " + read_sensors() + " KO")

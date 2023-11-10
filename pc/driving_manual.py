@@ -4,8 +4,7 @@ import traceback
 
 from pynput import keyboard
 
-from buffered_send import BufferedSend
-from open_connection import open_connection
+from control import BufferedSend, open_connection
 
 keyboard_queue = asyncio.Queue()
 action_map = {
@@ -19,9 +18,9 @@ action_map = {
 def arrow(key: [keyboard.Key, bool], connection: BufferedSend):
     if key[0] in action_map:
         if key[1]:
-            connection.drive(*action_map[key[0]])
+            asyncio.create_task(connection.drive(*action_map[key[0]]))
         else:
-            connection.stop()
+            asyncio.create_task(connection.stop())
 
 
 def on_press(loop):

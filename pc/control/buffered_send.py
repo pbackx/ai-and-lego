@@ -29,8 +29,8 @@ class BufferedSend:
     async def drive(self, left: int, right: int):
         await self.send(f"D{left:+02}{right:+02}".encode('ascii'))
 
-    def stop(self):
-        self.send(b'D000000')
+    async def stop(self):
+        await self.send(b'D000000')
 
     async def shutdown(self):
         await self.connection.send(b'B')
