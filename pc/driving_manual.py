@@ -48,6 +48,12 @@ async def read_keyboard(connection: BufferedSend):
             else:
                 arrow(key, connection)
 
+async def show_measurement(connection: BufferedSend):
+    while True:
+        measurement = connection.last_measurement()
+        if measurement is not None:
+            print(f"Jerk: {measurement.jerk_x:.2f} {measurement.jerk_y:.2f} {measurement.jerk_z:.2f}")
+        await asyncio.sleep(1)
 
 async def main(loop: asyncio.AbstractEventLoop):
     connection = None
@@ -62,7 +68,9 @@ async def main(loop: asyncio.AbstractEventLoop):
         listener.start()
 
         keyboard_task = loop.create_task(read_keyboard(connection))
+        measurement_task = loop.create_task(show_measurement(connection))
         await keyboard_task
+        measurement_task.cancel()
         listener.stop()
     finally:
         print("Quitting...")

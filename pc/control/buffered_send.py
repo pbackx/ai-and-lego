@@ -35,3 +35,6 @@ class BufferedSend:
     async def shutdown(self):
         await self.connection.send(b'B')
         await self.connection.shutdown()
+
+    def last_measurement(self):
+        return self.connection.last_measurement
