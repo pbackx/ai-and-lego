@@ -1,4 +1,5 @@
 import asyncio
+import random
 import sys
 import traceback
 
@@ -7,20 +8,7 @@ from pynput import keyboard
 from control import BufferedSend, open_connection
 
 keyboard_queue = asyncio.Queue()
-action_map = {
-    keyboard.Key.up: [50,50],
-    keyboard.Key.down: [-50,-50],
-    keyboard.Key.left: [-50,50],
-    keyboard.Key.right: [50,-50],
-}
-
-
-def arrow(key: [keyboard.Key, bool], connection: BufferedSend):
-    if key[0] in action_map:
-        if key[1]:
-            asyncio.create_task(connection.drive(*action_map[key[0]]))
-        else:
-            asyncio.create_task(connection.stop())
+drive_lock = asyncio.Lock()
 
 
 def on_press(loop):
@@ -31,6 +19,14 @@ def on_press(loop):
 
 def on_release(loop):
     return lambda key: asyncio.run_coroutine_threadsafe(keyboard_queue.put([key, False]), loop)
+
+
+async def backoff(connection: BufferedSend):
+    direction = random.choice([-20, 20])
+    async with drive_lock:
+        for i in range(3):
+            await connection.drive(-50 + direction, -50 - direction)
+            await asyncio.sleep(.1)
 
 
 async def read_keyboard(connection: BufferedSend):
@@ -45,15 +41,17 @@ async def read_keyboard(connection: BufferedSend):
             # This section is for special keys, like arrow keys
             if key[0] == keyboard.Key.esc:
                 return
-            else:
-                arrow(key, connection)
+            elif key[1] and key[0] == keyboard.Key.space:
+                asyncio.create_task(backoff(connection))
+
 
 async def show_measurement(connection: BufferedSend):
     while True:
-        measurement = connection.last_measurement()
-        if measurement is not None:
-            print(f"Jerk: {measurement.jerk_x:.2f} {measurement.jerk_y:.2f} {measurement.jerk_z:.2f}")
-        await asyncio.sleep(1)
+        async with drive_lock:
+            await connection.drive(50, 50)
+        # print(connection.last_measurement)
+        await asyncio.sleep(.1)
+
 
 async def main(loop: asyncio.AbstractEventLoop):
     connection = None
@@ -62,7 +60,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         if connection is None:
             return
 
-        print("Hub is running, you can now control the robot with the arrow keys (q to quit).")
+        print("Collection data. Press <space> every time the robot runs into something, press q to quit.")
 
         listener = keyboard.Listener(on_press=on_press(loop), on_release=on_release(loop))
         listener.start()
