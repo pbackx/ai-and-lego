@@ -1,6 +1,5 @@
 from bleak import BLEDevice, BleakClient
 from .hub_measurement import HubMeasurement
-import traceback
 
 UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -30,6 +29,8 @@ class HubConnection:
                     self._running = True
                 else:
                     self.last_measurement = HubMeasurement.from_string(decode, self.last_measurement)
+            else:
+                print(f"Received unknown message from hub: {decode}")
 
 
     async def send(self, data):

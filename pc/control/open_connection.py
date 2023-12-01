@@ -1,28 +1,40 @@
 import asyncio
-from bleak import BleakScanner
+from bleak import BleakScanner, BLEDevice
 from .buffered_send import BufferedSend
 from .hub_connection import HubConnection, UART_SERVICE_UUID
 import time
 
 
-async def open_connection() -> BufferedSend|None:
+async def open_connection(robot_name: str|None) -> BufferedSend|None:
     connection = None
 
     while connection is None or not connection.is_connected():
         devices = await BleakScanner.discover(return_adv=False, service_uuids=[UART_SERVICE_UUID])
         devices_with_name = [d for d in devices if d.name]
 
-        print("\n".join([f"{count + 1}. {device.name}" for [count, device] in enumerate(devices_with_name)]))
-        device_num = input("Enter device number (q to quit, enter to rescan): ")
-        if device_num == "q":
-            return None
-        elif device_num == "":
-            continue
-        device = devices_with_name[int(device_num) - 1]
+        if robot_name is not None:
+            device = get_device_by_name(devices_with_name, robot_name)
+            if device is None:
+                print(f"Could not find device with name {robot_name}. Waiting to retry.")
+                await asyncio.sleep(1)
+                continue
+        else:
+            print("\n".join([f"{count + 1}. {device.name}" for [count, device] in enumerate(devices_with_name)]))
+            device_num = input("Enter device number (q to quit, enter to rescan): ")
+            if device_num == "q":
+                return None
+            elif device_num == "":
+                continue
+            device = devices_with_name[int(device_num) - 1]
+
         print(f"Connecting to {device.name}...")
 
-        connection = HubConnection(device)
-        await connection.connect()
+        try:
+            connection = HubConnection(device)
+            await connection.connect()
+        except AttributeError:
+            # Sometimes the bluetooth_address is not set. I am not sure why this happens, but retrying fixes this
+            pass
 
     print("Please push the button on the hub to start the program.")
 
@@ -36,3 +48,9 @@ async def open_connection() -> BufferedSend|None:
         await asyncio.sleep(1)
 
     return BufferedSend(connection)
+
+def get_device_by_name(devices: list[BLEDevice], name: str):
+    for device in devices:
+        if device.name == name:
+            return device
+    return None
