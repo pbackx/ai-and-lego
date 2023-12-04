@@ -5,7 +5,7 @@ import traceback
 
 from pynput import keyboard
 
-from control import BufferedSend, open_connection
+from control import BufferedSend, RobotDriver
 
 keyboard_queue = asyncio.Queue()
 is_running_backoff = False
@@ -62,12 +62,7 @@ async def drive_and_measure(connection: BufferedSend):
 async def main():
     robot_name = ' '.join(sys.argv[1:]) if len(sys.argv) > 1 else None
 
-    connection = None
-    try:
-        connection = await open_connection(robot_name)
-        if connection is None:
-            return
-
+    async with RobotDriver(robot_name) as connection:
         print("Collection data. Press <space> every time the robot runs into something, press q to quit.")
 
         listener = keyboard.Listener(on_press=on_press(asyncio.get_running_loop()),
@@ -79,10 +74,6 @@ async def main():
         await keyboard_task
         measurement_task.cancel()
         listener.stop()
-    finally:
-        print("Quitting...")
-        if connection is not None:
-            await connection.shutdown()
 
 
 if __name__ == "__main__":
