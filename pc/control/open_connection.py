@@ -1,7 +1,7 @@
 import asyncio
 from bleak import BleakScanner, BLEDevice
 from .buffered_send import BufferedSend
-from .hub_connection import HubConnection, UART_SERVICE_UUID
+from .hub_connection import HubConnection
 import time
 
 
@@ -9,7 +9,7 @@ async def open_connection(robot_name: str|None) -> BufferedSend|None:
     connection = None
 
     while connection is None or not connection.is_connected():
-        devices = await BleakScanner.discover(return_adv=False, service_uuids=[UART_SERVICE_UUID])
+        devices = await BleakScanner.discover(return_adv=False)
         devices_with_name = [d for d in devices if d.name]
 
         if robot_name is not None:

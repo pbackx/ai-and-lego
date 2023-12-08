@@ -1,7 +1,7 @@
 import asyncio
 from bleak import BleakScanner, BLEDevice
 from .buffered_send import BufferedSend
-from .hub_connection import HubConnection, UART_SERVICE_UUID
+from .hub_connection import HubConnection
 import time
 from types import TracebackType
 from typing import Optional, Type
@@ -16,7 +16,7 @@ class RobotDriver:
         connection = None
 
         while connection is None or not connection.is_connected():
-            devices = await BleakScanner.discover(return_adv=False, service_uuids=[UART_SERVICE_UUID])
+            devices = await BleakScanner.discover(return_adv=False)
             devices_with_name = [d for d in devices if d.name]
 
             if self._robot_name is not None:
@@ -51,7 +51,7 @@ class RobotDriver:
             elapsed_time = time.time() - start_time
             if elapsed_time > timeout_seconds:
                 print("Timeout waiting for hub to start the program.")
-                return None
+                raise TimeoutError()
             await asyncio.sleep(1)
 
         self._buffered_send = BufferedSend(connection)

@@ -1,11 +1,14 @@
 import asyncio
+import csv
 import random
 import sys
 import traceback
+from dataclasses import asdict
 
 from pynput import keyboard
 
 from control import BufferedSend, RobotDriver
+from control.hub_measurement import HubMeasurement
 
 keyboard_queue = asyncio.Queue()
 is_running_backoff = False
@@ -28,7 +31,7 @@ async def backoff(connection: BufferedSend):
     for i in range(2):
         await connection.drive(-50,-50)
         await asyncio.sleep(.1)
-    for i in range(5):
+    for i in range(3):
         await connection.drive(direction, -direction)
         await asyncio.sleep(.1)
     is_running_backoff = False
@@ -51,12 +54,21 @@ async def read_keyboard(connection: BufferedSend):
 
 
 async def drive_and_measure(connection: BufferedSend):
-    while True:
-        global is_running_backoff
-        if not is_running_backoff:
-            await connection.drive(50, 50)
-        # print(connection.last_measurement)
-        await asyncio.sleep(1)
+    with open('measurements.csv', 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=HubMeasurement.fieldnames())
+        writer.writeheader()
+
+        while True:
+            try:
+                global is_running_backoff
+                if not is_running_backoff:
+                    await connection.drive(50, 50)
+                measurement = connection.last_measurement()
+                if measurement is not None:
+                    writer.writerow(asdict(measurement))
+                await asyncio.sleep(.1)
+            except Exception as e:
+                traceback.print_exception(e)
 
 
 async def main():

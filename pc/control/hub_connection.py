@@ -1,16 +1,13 @@
 from bleak import BLEDevice, BleakClient
 from .hub_measurement import HubMeasurement
 
-UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+PYBRICKS_COMMAND_EVENT_CHAR_UUID = "c5f50002-8280-46da-89f4-6d8051e4aeef"
 
 
 class HubConnection:
 
     def __init__(self, hub: BLEDevice):
         self._client = BleakClient(hub, disconnected_callback=self.handle_disconnect)
-        self._rx_char = None
         self._running = False
         self._buffer = ""
         self.last_measurement = None
@@ -19,7 +16,10 @@ class HubConnection:
         print("Hub was disconnected.")
 
     def handle_rx(self, _, data: bytearray):
-        self._buffer += data.decode('utf-8')
+        if data[0] != 0x01:
+            return
+        self._buffer += data[1:].decode('utf-8')
+        print(f"Received data from hub: {self._buffer}")
         if self._buffer.find(' KO') != -1:
             decode = self._buffer[:self._buffer.index(' KO')]
             self._buffer = self._buffer[self._buffer.index(' KO')+3:]
@@ -32,11 +32,10 @@ class HubConnection:
             else:
                 print(f"Received unknown message from hub: {decode}")
 
-
     async def send(self, data):
         if self._client is not None and self._running:
             try:
-                await self._client.write_gatt_char(self._rx_char, data)
+                await self._client.write_gatt_char(PYBRICKS_COMMAND_EVENT_CHAR_UUID, b"\x06" + data)
             except Exception as e:
                 print(f"Failed to send data to hub: {e}.")
                 await self.disconnect()
@@ -44,9 +43,7 @@ class HubConnection:
     async def connect(self) -> bool:
         try:
             await self._client.connect()
-            await self._client.start_notify(UART_TX_CHAR_UUID, self.handle_rx)
-            nus = self._client.services.get_service(UART_SERVICE_UUID)
-            self._rx_char = nus.get_characteristic(UART_RX_CHAR_UUID)
+            await self._client.start_notify(PYBRICKS_COMMAND_EVENT_CHAR_UUID, self.handle_rx)
             return True
         except Exception as e:
             print(f"Failed to connect to hub: {e}.")

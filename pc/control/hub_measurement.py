@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+
 @dataclass
 class HubMeasurement:
     pitch: float
@@ -17,6 +18,11 @@ class HubMeasurement:
     jerk_x: float = 0
     jerk_y: float = 0
     jerk_z: float = 0
+
+    @staticmethod
+    def fieldnames():
+        return ['pitch', 'roll', 'acceleration_x', 'acceleration_y', 'acceleration_z', 'angular_velocity_x',
+                'angular_velocity_y', 'angular_velocity_z', 'distance', 'time', 'jerk_x', 'jerk_y', 'jerk_z']
 
     @staticmethod
     def from_string(data: str, previous_measurement: 'HubMeasurement' = None) -> 'HubMeasurement':
