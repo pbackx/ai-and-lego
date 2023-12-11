@@ -1,1 +1,6 @@
+jedi-language-server==0.41.2
+jupyterlab==4.0.9
+jupyterlab-lsp==5.0.1
+matplotlib==3.8.2
 pandas==2.1.2
+Pillow==10.1.0
