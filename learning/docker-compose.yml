@@ -4,6 +4,7 @@ services:
     user: "1000:1000"
     ports:
       - "8888:8888"
+      - "6006:6006"
     volumes:
       - /mnt/c/dev/ai-and-lego:/project
       - /home/peter/jupyter-config:/.jupyter

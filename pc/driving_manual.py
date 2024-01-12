@@ -55,7 +55,7 @@ async def read_keyboard(connection: BufferedSend):
 
 async def drive_and_measure(connection: BufferedSend):
     with open('measurements.csv', 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=HubMeasurement.fieldnames())
+        writer = csv.DictWriter(csvfile, fieldnames=HubMeasurement.fieldnames() + ['is_running_backoff'])
         writer.writeheader()
 
         while True:
@@ -65,7 +65,9 @@ async def drive_and_measure(connection: BufferedSend):
                     await connection.drive(50, 50)
                 measurement = connection.last_measurement()
                 if measurement is not None:
-                    writer.writerow(asdict(measurement))
+                    row = asdict(measurement)
+                    row['is_running_backoff'] = is_running_backoff
+                    writer.writerow(row)
                 await asyncio.sleep(.1)
             except Exception as e:
                 traceback.print_exception(e)

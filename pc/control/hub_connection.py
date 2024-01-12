@@ -19,7 +19,6 @@ class HubConnection:
         if data[0] != 0x01:
             return
         self._buffer += data[1:].decode('utf-8')
-        print(f"Received data from hub: {self._buffer}")
         if self._buffer.find(' KO') != -1:
             decode = self._buffer[:self._buffer.index(' KO')]
             self._buffer = self._buffer[self._buffer.index(' KO')+3:]
