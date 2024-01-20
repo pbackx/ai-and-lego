@@ -8,6 +8,7 @@ services:
     volumes:
       - /mnt/c/dev/ai-and-lego:/project
       - /home/peter/jupyter-config:/.jupyter
+      - /mnt/c/dev/tensorflow-datasets:/tensorflow_datasets
     deploy:
       # https://docs.docker.com/compose/gpu-support/
       resources:
