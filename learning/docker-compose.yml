@@ -6,9 +6,9 @@ services:
       - "8888:8888"
       - "6006:6006"
     volumes:
-      - /mnt/c/dev/ai-and-lego:/project
-      - /home/peter/jupyter-config:/.jupyter
-      - /mnt/c/dev/tensorflow-datasets:/tensorflow_datasets
+      - C:/dev/ai-and-lego:/project
+      - C:/Users/peter:/.jupyter
+      - C:/dev/tensorflow-datasets:/tensorflow_datasets
     deploy:
       # https://docs.docker.com/compose/gpu-support/
       resources:
